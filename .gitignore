@@ -1,0 +1,35 @@
+# ===== Rust =====
+kernel/target/
+**/*.rlib
+**/*.rmeta
+
+# ===== Build artifacts =====
+*.o
+*.elf
+*.iso
+*.bin
+
+# ===== ISO output =====
+iso/boot/kernel.elf
+
+# ===== Cargo =====
+kernel/Cargo.lock
+
+# ===== QEMU =====
+*.img
+*.qcow2
+
+# ===== Logs =====
+*.log
+
+# ===== Editor / OS =====
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+*~
+
+# ===== Debug =====
+gdb.txt
+
