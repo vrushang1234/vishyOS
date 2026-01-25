@@ -7,7 +7,11 @@ KERNEL_DIR  := kernel
 RUST_BUILD  := $(KERNEL_DIR)/target/debug
 RUST_LIB    := $(RUST_BUILD)/libkernel.a
 
-KERNEL_ELF  := iso/boot/kernel.elf
+ISO_DIR     := iso
+BOOT_DIR    := $(ISO_DIR)/boot
+
+KERNEL_ELF  := $(BOOT_DIR)/kernel.elf
+
 
 AS          := as
 LD          := ld.lld
@@ -15,7 +19,7 @@ CARGO       := cargo
 QEMU        := qemu-system-x86_64
 
 # ===== Sources =====
-ASM_SRCS := boot.s multiboot.s
+ASM_SRCS := boot.s
 ASM_OBJS := $(ASM_SRCS:.s=.o)
 
 # ===== Flags =====
@@ -47,15 +51,26 @@ asm: $(ASM_OBJS)
 
 # --- Kernel ELF ---
 kernel: rust asm
+	mkdir -p $(BOOT_DIR)
 	$(LD) $(LDFLAGS) \
 		-o $(KERNEL_ELF) \
-		multiboot.o \
 		boot.o \
 		$(RUST_LIB)
 
 # --- ISO ---
 iso: kernel
-	grub-mkrescue -o $(ISO_NAME) iso/
+	xorriso -as mkisofs \
+		-b limine-bios-cd.bin \
+		-no-emul-boot \
+		-boot-load-size 4 \
+		-boot-info-table \
+		--efi-boot limine-uefi-cd.bin \
+		-efi-boot-part \
+		--efi-boot-image \
+		-o $(ISO_NAME) \
+		$(ISO_DIR)
+
+	$(ISO_DIR)/limine/limine bios-install $(ISO_NAME)
 
 # --- Run ---
 run: iso

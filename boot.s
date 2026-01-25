@@ -19,4 +19,3 @@ _start:
 stack_bottom:
     .skip 16384
 stack_top:
-

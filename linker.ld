@@ -1,15 +1,26 @@
 ENTRY(_start)
 
-SECTIONS {
-    . = 1M;
+KERNEL_VMA = 0xffffffff80000000;
 
-    .text : {
-        *(.multiboot*)
-        *(.text*)
+SECTIONS
+{
+    . = KERNEL_VMA;
+
+    .text : ALIGN(4K) {
+        *(.text .text.*)
     }
 
-    .rodata : { *(.rodata*) }
-    .data   : { *(.data*) }
-    .bss    : { *(.bss*) *(COMMON) }
+    .rodata : ALIGN(4K) {
+        *(.rodata .rodata.*)
+    }
+
+    .data : ALIGN(4K) {
+        *(.data .data.*)
+    }
+
+    .bss : ALIGN(4K) {
+        *(COMMON)
+        *(.bss .bss.*)
+    }
 }
 
