@@ -59,6 +59,3 @@ pub unsafe fn draw_str(fb: *mut u32, pitch: usize, x: usize, y: usize, s: &[u8],
         }
     }
 }
-
-pub const CHAR_WIDTH: usize = GLYPH_WIDTH;
-pub const CHAR_HEIGHT: usize = GLYPH_HEIGHT;

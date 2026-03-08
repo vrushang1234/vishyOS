@@ -19,7 +19,7 @@ CARGO       := cargo
 QEMU        := qemu-system-x86_64
 
 # ===== Sources =====
-ASM_SRCS := $(KERNEL_DIR)/boot.s
+ASM_SRCS := $(KERNEL_DIR)/boot/boot.s
 ASM_OBJS := $(ASM_SRCS:.s=.o)
 
 # ===== Flags =====
@@ -54,7 +54,7 @@ kernel: rust asm
 	mkdir -p $(BOOT_DIR)
 	$(LD) $(LDFLAGS) \
 		-o $(KERNEL_ELF) \
-		$(KERNEL_DIR)/boot.o \
+		$(KERNEL_DIR)/boot/boot.o \
 		$(RUST_LIB)
 
 # --- ISO ---
