@@ -7,7 +7,6 @@ kernel/target/
 *.o
 *.elf
 *.iso
-*.bin
 
 # ===== ISO output =====
 iso/boot/kernel.elf
