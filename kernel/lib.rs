@@ -9,6 +9,7 @@ mod memory;
 #[unsafe(no_mangle)]
 pub extern "C" fn rust_main() -> ! {
     drivers::framebuffer::init();
+    drivers::framebuffer::print("Hello world!");
 
     loop {
         unsafe {

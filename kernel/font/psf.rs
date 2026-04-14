@@ -1,6 +1,8 @@
 // PSF2 font renderer using UniCyr_8x16.psf
 // Header: 32 bytes, 256 glyphs, 8x16 pixels each, 16 bytes per glyph
 
+use core::sync::atomic::{AtomicBool, Ordering};
+
 static FONT_DATA: &[u8] = include_bytes!("font.psf");
 
 // PSF2 header (little-endian u32 fields):
@@ -17,6 +19,14 @@ const HEADER_SIZE: usize = 32;
 const BYTES_PER_GLYPH: usize = 16;
 const GLYPH_HEIGHT: usize = 16;
 const GLYPH_WIDTH: usize = 8;
+
+static mut CURSOR_X: usize = 0;
+static mut CURSOR_Y: usize = 0;
+static mut SCREEN_COLS: usize = 80; // updated from pixel width at init
+
+pub unsafe fn set_screen_width(pixel_width: usize) {
+    unsafe { SCREEN_COLS = pixel_width / GLYPH_WIDTH };
+}
 
 /// Draw a single ASCII character onto the framebuffer.
 ///
@@ -50,12 +60,21 @@ pub unsafe fn draw_char(fb: *mut u32, pitch: usize, x: usize, y: usize, c: u8, f
     }
 }
 
-/// Draw a null-terminated ASCII string starting at (x, y).
-/// Each character advances x by GLYPH_WIDTH pixels.
-pub unsafe fn draw_str(fb: *mut u32, pitch: usize, x: usize, y: usize, s: &[u8], fg: u32, bg: u32) {
-    for (i, &c) in s.iter().enumerate() {
+/// Draw a null-terminated ASCII string starting at the cursor position.
+pub unsafe fn draw_str(fb: *mut u32, pitch: usize, s: &str, fg: u32, bg: u32) {
+    for c in s.bytes() {
         unsafe {
-            draw_char(fb, pitch, x + i * GLYPH_WIDTH, y, c, fg, bg);
+            match c {
+                b'\n' => {
+                    CURSOR_Y += GLYPH_HEIGHT;
+                    CURSOR_X = 0;
+                }
+                _ => {
+                    draw_char(fb, pitch, CURSOR_X, CURSOR_Y, c, fg, bg);
+                    CURSOR_X += GLYPH_WIDTH;
+                }
+            }
         }
     }
 }
+
