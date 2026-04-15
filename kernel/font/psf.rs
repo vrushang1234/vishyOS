@@ -1,8 +1,6 @@
 // PSF2 font renderer using UniCyr_8x16.psf
 // Header: 32 bytes, 256 glyphs, 8x16 pixels each, 16 bytes per glyph
 
-use core::sync::atomic::{AtomicBool, Ordering};
-
 static FONT_DATA: &[u8] = include_bytes!("font.psf");
 
 // PSF2 header (little-endian u32 fields):
@@ -77,4 +75,3 @@ pub unsafe fn draw_str(fb: *mut u32, pitch: usize, s: &str, fg: u32, bg: u32) {
         }
     }
 }
-

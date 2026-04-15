@@ -13,7 +13,7 @@ use drivers::framebuffer;
 pub extern "C" fn rust_main() -> ! {
     framebuffer::init();
     gdt::gdt::init();
-    framebuffer::print("GDT Initialized!");
+    framebuffer::print("GDT Initialized!\n");
 
     loop {
         unsafe {

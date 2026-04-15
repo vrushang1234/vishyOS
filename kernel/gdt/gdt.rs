@@ -1,3 +1,4 @@
+use core::arch::global_asm;
 ////////// GDT Entry //////////
 // Limit Low: Lower 16 bits of the segment size (ignored here for 64 bit)
 // Limit High: Upper 4 bits of the segment size
@@ -87,9 +88,37 @@ static mut GDT: [GdtEntry; 3] = [
     GdtEntry::kernel_data(),
 ];
 
+// Inline assembly for flushing the old cached segment and loading the new GDT descriptor
+global_asm!(
+    r#"
+    .global gdt_flush
+    gdt_flush:
+        lgdt [rdi]
+        push 0x08
+        lea rax, [rip + .Lgdt_cs_reload]
+        push rax
+        retfq
+    .Lgdt_cs_reload:
+        mov ax, 0x10
+        mov ds, ax
+        mov es, ax
+        mov fs, ax
+        mov gs, ax
+        mov ss, ax
+        ret
+    "#
+);
+
+unsafe extern "C" {
+    fn gdt_flush(ptr: *const GdtDescriptor);
+}
+
 pub fn init() {
     let descriptor = GdtDescriptor {
         size: (core::mem::size_of::<[GdtEntry; 3]>() - 1) as u16,
         offset: core::ptr::addr_of!(GDT) as u64,
     };
+    unsafe {
+        gdt_flush(&descriptor);
+    }
 }
