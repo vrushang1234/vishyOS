@@ -37,3 +37,27 @@ pub fn backspace() {
         }
     }
 }
+
+pub fn cursor_draw() {
+    unsafe {
+        if !FB.0.is_null() {
+            font::psf::cursor_draw(FB.0, FB.1);
+        }
+    }
+}
+
+pub fn cursor_erase() {
+    unsafe {
+        if !FB.0.is_null() {
+            font::psf::cursor_erase(FB.0, FB.1);
+        }
+    }
+}
+
+pub fn cursor_toggle() {
+    unsafe {
+        if !FB.0.is_null() {
+            font::psf::cursor_toggle(FB.0, FB.1);
+        }
+    }
+}

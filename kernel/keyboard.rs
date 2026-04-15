@@ -156,10 +156,14 @@ pub fn process_scancode(scancode: u8) {
     if byte == 0 {
         return;
     }
+
+    framebuffer::cursor_erase();
+
     if byte == 0x08 {
         framebuffer::backspace();
     } else {
         let s = unsafe { core::str::from_utf8_unchecked(core::slice::from_ref(&byte)) };
         framebuffer::print(s);
     }
+    framebuffer::cursor_draw();
 }

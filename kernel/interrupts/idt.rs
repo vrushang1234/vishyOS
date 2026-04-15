@@ -215,7 +215,10 @@ extern "C" fn interrupt_dispatch(frame: &InterruptFrame) {
         0..=31 => handle_exception(frame),
         32 => {
             static TICK: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
-            let _t = TICK.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+            let t = TICK.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+            if t % 9 == 0 {
+                crate::drivers::framebuffer::cursor_toggle();
+            }
             unsafe { pic::send_eoi(0) };
         }
 
