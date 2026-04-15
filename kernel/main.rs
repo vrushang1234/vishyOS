@@ -1,5 +1,6 @@
 // Main file reached from boot.s
-// Current implementation initializes GDT and PIC
+// Current implementation initializes GDT and IDT, enabline interrupts
+// Tests a divide by 0 error and if the interrupt/trap runs
 // After intialization goes into hlt
 #![no_std]
 
@@ -20,10 +21,12 @@ pub extern "C" fn rust_main() -> ! {
     gdt::gdt::init();
     framebuffer::print("GDT Initialized!\n");
 
+    interrupts::idt::init();
+    framebuffer::print("Interrupts Initialized");
+
     unsafe {
-        interrupts::pic::init();
+        core::arch::asm!("xor eax, eax", "div eax");
     }
-    framebuffer::print("PICs initialized");
 
     loop {
         unsafe {
