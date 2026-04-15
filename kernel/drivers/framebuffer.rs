@@ -30,3 +30,10 @@ pub fn print(s: &str) {
         }
     }
 }
+pub fn backspace() {
+    unsafe {
+        if !FB.0.is_null() {
+            font::psf::backspace(FB.0, FB.1);
+        }
+    }
+}

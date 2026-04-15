@@ -157,6 +157,7 @@ pub fn process_scancode(scancode: u8) {
         return;
     }
     if byte == 0x08 {
+        framebuffer::backspace();
     } else {
         let s = unsafe { core::str::from_utf8_unchecked(core::slice::from_ref(&byte)) };
         framebuffer::print(s);

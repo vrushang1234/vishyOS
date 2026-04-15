@@ -75,3 +75,21 @@ pub unsafe fn draw_str(fb: *mut u32, pitch: usize, s: &str, fg: u32, bg: u32) {
         }
     }
 }
+
+pub unsafe fn backspace(fb: *mut u32, pitch: usize) {
+    let (x, y, cols) = unsafe { (CURSOR_X, CURSOR_Y, SCREEN_COLS) };
+
+    let (new_x, new_y) = if x >= GLYPH_WIDTH {
+        (x - GLYPH_WIDTH, y)
+    } else if y >= GLYPH_HEIGHT {
+        ((cols - 1) * GLYPH_WIDTH, y - GLYPH_HEIGHT)
+    } else {
+        return; // already at (0, 0)
+    };
+
+    unsafe {
+        CURSOR_X = new_x;
+        CURSOR_Y = new_y;
+        draw_char(fb, pitch, new_x, new_y, b' ', 0x00FFFFFF, 0x00000000);
+    }
+}
