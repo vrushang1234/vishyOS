@@ -4,12 +4,16 @@ use core::panic::PanicInfo;
 
 mod drivers;
 mod font;
+mod gdt;
 mod memory;
+
+use drivers::framebuffer;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn rust_main() -> ! {
-    drivers::framebuffer::init();
-    drivers::framebuffer::print("Hello world!");
+    framebuffer::init();
+    gdt::gdt::init();
+    framebuffer::print("GDT Initialized!");
 
     loop {
         unsafe {
