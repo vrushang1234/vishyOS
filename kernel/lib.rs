@@ -1,3 +1,6 @@
+// Main file reached from boot.s
+// Current implementation initializes GDT and PIC
+// After intialization goes into hlt
 #![no_std]
 
 use core::panic::PanicInfo;

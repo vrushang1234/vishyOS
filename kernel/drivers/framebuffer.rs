@@ -8,6 +8,7 @@ static FB_REQUEST: FramebufferRequest = FramebufferRequest::new();
 
 static mut FB: (*mut u32, usize) = (core::ptr::null_mut(), 0);
 
+// Initialize framebuffer (loaded first on booting)
 pub fn init() {
     if let Some(framebuffer_response) = FB_REQUEST.get_response() {
         if let Some(framebuffer) = framebuffer_response.framebuffers().next() {
