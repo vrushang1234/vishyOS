@@ -1,3 +1,6 @@
+// AI assisted in this file
+// Verified by author - Vrushang
+
 ////////// ISR Stubs //////////
 // These stubs define the behavior of interrupts
 // If the CPU exception did not push an error code, push 0

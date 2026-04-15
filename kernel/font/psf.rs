@@ -1,3 +1,5 @@
+// AI assisted for this file
+// Verified by author - Vrushang
 use core::sync::atomic::{AtomicBool, Ordering};
 static FONT_DATA: &[u8] = include_bytes!("font.psf");
 

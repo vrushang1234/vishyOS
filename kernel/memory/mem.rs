@@ -1,3 +1,6 @@
+// AI assisted in this file
+// Verified by author - Vrushang
+
 use core::ptr;
 
 /// Copy `n` bytes from `src` to `dest`
