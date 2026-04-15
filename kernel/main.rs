@@ -1,6 +1,6 @@
 // Main file reached from boot.s
 // Current implementation initializes GDT and IDT, enabline interrupts
-// Tests a divide by 0 error and if the interrupt/trap runs
+// It also enables keyboard interrupts and can be tested
 // After intialization goes into hlt
 #![no_std]
 
@@ -11,6 +11,7 @@ mod font;
 mod gdt;
 mod interrupts;
 mod io;
+mod keyboard;
 mod memory;
 
 use drivers::framebuffer;
@@ -23,10 +24,6 @@ pub extern "C" fn rust_main() -> ! {
 
     interrupts::idt::init();
     framebuffer::print("Interrupts Initialized");
-
-    unsafe {
-        core::arch::asm!("xor eax, eax", "div eax");
-    }
 
     loop {
         unsafe {

@@ -62,7 +62,6 @@ pub unsafe fn init() {
     }
 }
 
-// Send End-Of-Interrupt for the given IRQ number (0-based).
 pub unsafe fn send_eoi(irq: u8) {
     unsafe {
         if irq >= 8 {
@@ -72,7 +71,6 @@ pub unsafe fn send_eoi(irq: u8) {
     }
 }
 
-// Mask (disable) a specific IRQ line (0-based).
 #[allow(dead_code)]
 pub unsafe fn mask_irq(irq: u8) {
     unsafe {
@@ -86,7 +84,6 @@ pub unsafe fn mask_irq(irq: u8) {
     }
 }
 
-// Unmask (enable) a specific IRQ line (0-based).
 pub unsafe fn unmask_irq(irq: u8) {
     unsafe {
         let (port, bit) = if irq < 8 {

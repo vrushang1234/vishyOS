@@ -57,10 +57,8 @@ pub struct InterruptFrame {
     pub ss: u64,
 }
 
-// Interrupt stubs
 global_asm!(include_str!("isr_stubs.s"));
 
-// Extern declarations for each stub
 unsafe extern "C" {
     fn isr_stub_0();
     fn isr_stub_1();
@@ -112,7 +110,6 @@ unsafe extern "C" {
     fn isr_stub_47();
 }
 
-// Convenience array for loading all stubs into the IDT at once
 static ISR_STUBS: [unsafe extern "C" fn(); 48] = [
     isr_stub_0,
     isr_stub_1,
@@ -167,12 +164,12 @@ static ISR_STUBS: [unsafe extern "C" fn(); 48] = [
 #[derive(Clone, Copy)]
 #[repr(C, packed)]
 struct IdtEntry {
-    offset_low: u16,  // handler[15:0]
-    selector: u16,    // kernel code segment selector
-    ist: u8,          // bits[2:0] = IST index
-    type_attr: u8,    // P | DPL | 0 | gate type
-    offset_mid: u16,  // handler[31:16]
-    offset_high: u32, // handler[63:32]
+    offset_low: u16,
+    selector: u16,
+    ist: u8,
+    type_attr: u8,
+    offset_mid: u16,
+    offset_high: u32,
     reserved: u32,
 }
 
@@ -215,8 +212,19 @@ extern "C" fn interrupt_dispatch(frame: &InterruptFrame) {
     let num = frame.interrupt_number;
 
     match num {
-        // CPU exceptions (0-31)
         0..=31 => handle_exception(frame),
+        32 => {
+            static TICK: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
+            let _t = TICK.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+            unsafe { pic::send_eoi(0) };
+        }
+
+        33 => {
+            let scancode = unsafe { crate::io::inb(0x60) };
+            crate::keyboard::process_scancode(scancode);
+            unsafe { pic::send_eoi(1) };
+        }
+
         34..=47 => {
             unsafe { pic::send_eoi((num - 32) as u8) };
         }
@@ -224,7 +232,6 @@ extern "C" fn interrupt_dispatch(frame: &InterruptFrame) {
     }
 }
 
-/// CPU exception handler - Print a message and halt
 fn handle_exception(frame: &InterruptFrame) {
     crate::drivers::framebuffer::print("\nEXCEPTION: ");
     crate::drivers::framebuffer::print(exception_name(frame.interrupt_number as u8));
@@ -260,16 +267,13 @@ fn exception_name(num: u8) -> &'static str {
     }
 }
 
-// Initialize IDT and load it, then initalize PIC and enable interrupts
 pub fn init() {
-    // Install stubs for vectors 0-47
     unsafe {
         for (i, &stub) in ISR_STUBS.iter().enumerate() {
             IDT[i] = IdtEntry::new(stub as u64);
         }
     }
 
-    // Load the IDT
     let descriptor = IdtDescriptor {
         size: (core::mem::size_of::<[IdtEntry; 256]>() - 1) as u16,
         offset: core::ptr::addr_of!(IDT) as u64,
@@ -282,13 +286,11 @@ pub fn init() {
         );
     }
 
-    // Remap the PIC and unmask timer (IRQ0) and keyboard (IRQ1)
     unsafe {
         pic::init();
         pic::unmask_irq(0); // timer
         pic::unmask_irq(1); // keyboard
     }
 
-    // Enable interrupts
     unsafe { core::arch::asm!("sti", options(nomem, nostack)) };
 }
