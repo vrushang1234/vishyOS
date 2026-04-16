@@ -23,10 +23,11 @@ pub fn init() {
     }
 }
 
-pub fn print(s: &str) {
+pub fn print(s: &str, fg: u32) {
+    let color: u32 = fg;
     unsafe {
         if !FB.0.is_null() {
-            font::psf::draw_str(FB.0, FB.1, s, 0xFFFFFFFF, 0x00000000);
+            font::psf::draw_str(FB.0, FB.1, s, color, 0x00000000);
         }
     }
 }

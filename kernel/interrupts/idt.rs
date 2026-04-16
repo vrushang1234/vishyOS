@@ -236,8 +236,8 @@ extern "C" fn interrupt_dispatch(frame: &InterruptFrame) {
 }
 
 fn handle_exception(frame: &InterruptFrame) {
-    crate::drivers::framebuffer::print("\nEXCEPTION: ");
-    crate::drivers::framebuffer::print(exception_name(frame.interrupt_number as u8));
+    crate::drivers::framebuffer::print("\nEXCEPTION: ", 0xFFFFFFFF);
+    crate::drivers::framebuffer::print(exception_name(frame.interrupt_number as u8), 0xFFFFFFFF);
     loop {
         unsafe { core::arch::asm!("hlt") };
     }
