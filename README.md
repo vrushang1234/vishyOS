@@ -1,6 +1,6 @@
 # vishyOS
 #### A custom hobby kernel for x86 systems built in Rust.
-![Kernel Screenshot](https://github.com/vrushang1234/vishyOS/blob/main/assets/kernel-ss.png)
+![Kernel Screenshot](https://github.com/vrushang1234/vishyOS/blob/main/assets/kernel-ss1.png)
 
 Current implementation supports 
 
