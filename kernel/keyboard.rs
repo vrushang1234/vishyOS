@@ -1,7 +1,13 @@
 use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
+use crate::cmd;
+
 static SHIFT: AtomicBool = AtomicBool::new(false);
 static LINE_LEN: AtomicUsize = AtomicUsize::new(0);
+
+const INPUT_BUFFER_SIZE: usize = 256;
+static mut INPUT_BUFFER: [u8; INPUT_BUFFER_SIZE] = [0; INPUT_BUFFER_SIZE];
+static mut INPUT_LEN: usize = 0;
 
 #[rustfmt::skip]
 static UNSHIFTED: [u8; 58] = [
@@ -162,14 +168,33 @@ pub fn process_scancode(scancode: u8) {
 
     if byte == 0x08 {
         if LINE_LEN.load(Ordering::Relaxed) > 0 {
+            unsafe {
+                if INPUT_LEN >= 1 {
+                    INPUT_LEN -= 1;
+                    INPUT_BUFFER[INPUT_LEN] = 0;
+                }
+            }
+
             framebuffer::backspace();
             LINE_LEN.fetch_sub(1, Ordering::Relaxed);
         }
     } else if byte == b'\n' {
+        unsafe {
+            let buf = &INPUT_BUFFER[..INPUT_LEN];
+            cmd::handle_command(buf);
+            INPUT_BUFFER = [0; 256];
+            INPUT_LEN = 0;
+        }
         framebuffer::print("\n> ", 0xFFFFFFFF);
         LINE_LEN.store(0, Ordering::Relaxed);
     } else {
         let s = unsafe { core::str::from_utf8_unchecked(core::slice::from_ref(&byte)) };
+        unsafe {
+            if INPUT_LEN < INPUT_BUFFER_SIZE {
+                INPUT_BUFFER[INPUT_LEN] = byte;
+                INPUT_LEN += 1;
+            }
+        }
         framebuffer::print(s, 0xFFFFFFFF);
         LINE_LEN.fetch_add(1, Ordering::Relaxed);
     }

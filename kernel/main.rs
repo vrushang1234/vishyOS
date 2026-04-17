@@ -6,6 +6,7 @@
 
 use core::panic::PanicInfo;
 
+mod cmd;
 mod colors;
 mod drivers;
 mod font;

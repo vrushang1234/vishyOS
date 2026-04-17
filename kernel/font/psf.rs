@@ -19,6 +19,14 @@ pub unsafe fn set_screen_width(pixel_width: usize) {
     unsafe { SCREEN_COLS = pixel_width / GLYPH_WIDTH };
 }
 
+pub unsafe fn reset_cursor() {
+    unsafe {
+        CURSOR_X = 0;
+        CURSOR_Y = 0;
+        PREV_LINE_END_X = 0;
+    }
+}
+
 static CURSOR_ON: AtomicBool = AtomicBool::new(false);
 
 pub unsafe fn draw_char(fb: *mut u32, pitch: usize, x: usize, y: usize, c: u8, fg: u32, bg: u32) {
