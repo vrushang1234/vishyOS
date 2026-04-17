@@ -56,6 +56,10 @@ pub unsafe fn draw_str(fb: *mut u32, pitch: usize, s: &str, fg: u32, bg: u32) {
                 _ => {
                     draw_char(fb, pitch, CURSOR_X, CURSOR_Y, c, fg, bg);
                     CURSOR_X += GLYPH_WIDTH;
+                    if CURSOR_X >= (SCREEN_COLS) * GLYPH_WIDTH {
+                        CURSOR_X = 0;
+                        CURSOR_Y += GLYPH_HEIGHT;
+                    }
                 }
             }
         }
