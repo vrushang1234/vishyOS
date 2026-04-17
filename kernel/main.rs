@@ -38,6 +38,8 @@ pub extern "C" fn rust_main() -> ! {
         orange_font,
     );
 
+    framebuffer::print("\n> ", white_font);
+
     loop {
         unsafe {
             core::arch::asm!("hlt");

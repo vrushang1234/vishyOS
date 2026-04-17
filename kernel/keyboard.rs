@@ -1,6 +1,7 @@
-use core::sync::atomic::{AtomicBool, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 static SHIFT: AtomicBool = AtomicBool::new(false);
+static LINE_LEN: AtomicUsize = AtomicUsize::new(0);
 
 #[rustfmt::skip]
 static UNSHIFTED: [u8; 58] = [
@@ -160,10 +161,17 @@ pub fn process_scancode(scancode: u8) {
     framebuffer::cursor_erase();
 
     if byte == 0x08 {
-        framebuffer::backspace();
+        if LINE_LEN.load(Ordering::Relaxed) > 0 {
+            framebuffer::backspace();
+            LINE_LEN.fetch_sub(1, Ordering::Relaxed);
+        }
+    } else if byte == b'\n' {
+        framebuffer::print("\n> ", 0xFFFFFFFF);
+        LINE_LEN.store(0, Ordering::Relaxed);
     } else {
         let s = unsafe { core::str::from_utf8_unchecked(core::slice::from_ref(&byte)) };
         framebuffer::print(s, 0xFFFFFFFF);
+        LINE_LEN.fetch_add(1, Ordering::Relaxed);
     }
     framebuffer::cursor_draw();
 }
