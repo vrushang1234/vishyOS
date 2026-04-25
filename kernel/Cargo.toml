@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 limine = "0.5.0"
+libm = "0.2.16"
 
 [lib]
 crate-type = ["staticlib"]
