@@ -19,8 +19,26 @@ mod memory;
 use colors::{Color, get_color};
 use drivers::framebuffer;
 
+unsafe fn enable_sse() {
+    let mut cr0: u64;
+
+    core::arch::asm!("mov {}, cr0", out(reg) cr0);
+    cr0 &= !(1u64 << 2);
+    cr0 |= 1u64 << 1;
+    core::arch::asm!("mov cr0, {}", in(reg) cr0);
+
+    let mut cr4: u64;
+
+    core::arch::asm!("mov {}, cr4", out(reg) cr4);
+    cr4 |= (1u64 << 9) | (1u64 << 10);
+    core::arch::asm!("mov cr4, {}", in(reg) cr4);
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn rust_main() -> ! {
+    unsafe {
+        enable_sse();
+    };
     let white_font: u32 = get_color(Color::White);
     let orange_font: u32 = get_color(Color::Orange);
 
