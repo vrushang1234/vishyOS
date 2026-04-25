@@ -82,7 +82,7 @@ fn donut_cmd() {
             }
         }
 
-        framebuffer::clear();
+        framebuffer::reset_cursor();
 
         for row in 0..22 {
             for col in 0..80 {

@@ -75,3 +75,9 @@ pub fn clear() {
         font::psf::reset_cursor();
     }
 }
+
+pub fn reset_cursor() {
+    unsafe {
+        font::psf::reset_cursor();
+    }
+}
