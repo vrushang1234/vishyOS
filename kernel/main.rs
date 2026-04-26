@@ -46,6 +46,7 @@ pub extern "C" fn rust_main() -> ! {
 
     interrupts::idt::init();
     framebuffer::print("Interrupts Initialized\n", white_font);
+    memory::mmu::init_memory();
     framebuffer::print(
         "##    ## ######  ######  ##  ## ##    ##  ######  ######\n\
         ##    ##   ##   ##       ##  ##  ##  ##  ##    ## ##     \n\
