@@ -34,25 +34,23 @@ fn donut_cmd() {
         let mut z = [0.0f32; 1760];
         let mut out = [b' '; 1760];
 
-        for j in 0..628 {
-            for i in 0..628 {
+        let sin_a = sinf(a);
+        let cos_a = cosf(a);
+        let sin_b = sinf(b);
+        let cos_b = cosf(b);
+
+        for j in (0..628).step_by(7) {
+            let fj = j as f32 / 100.0;
+            let sin_j = sinf(fj);
+            let cos_j = cosf(fj);
+
+            for i in (0..628).step_by(3) {
                 let fi = i as f32 / 100.0;
-                let fj = j as f32 / 100.0;
-
-                let sin_i = libm::sinf(fi);
-                let cos_i = libm::cosf(fi);
-                let sin_j = libm::sinf(fj);
-                let cos_j = libm::cosf(fj);
-
-                let sin_a = sinf(a);
-                let cos_a = cosf(a);
-                let sin_b = sinf(b);
-                let cos_b = cosf(b);
+                let sin_i = sinf(fi);
+                let cos_i = cosf(fi);
 
                 let circle = cos_j + 2.0;
-
                 let depth = 1.0 / (sin_i * circle * sin_a + sin_j * cos_a + 5.0);
-
                 let t = sin_i * circle * cos_a - sin_j * sin_a;
 
                 let x = (40.0 + 30.0 * depth * (cos_i * circle * cos_b - t * sin_b)) as isize;
@@ -82,22 +80,25 @@ fn donut_cmd() {
             }
         }
 
-        framebuffer::reset_cursor();
+        let mut frame = [0u8; 22 * 81];
+        let mut k = 0;
 
         for row in 0..22 {
             for col in 0..80 {
-                let ch = out[row * 80 + col] as char;
-
-                let mut buf = [0u8; 4];
-                let s = ch.encode_utf8(&mut buf);
-
-                framebuffer::print(s, 0xFFFFFFFF);
+                frame[k] = out[row * 80 + col];
+                k += 1;
             }
 
-            framebuffer::print("\n", 0xFFFFFFFF);
+            frame[k] = b'\n';
+            k += 1;
         }
 
-        a += 0.04;
-        b += 0.02;
+        framebuffer::reset_cursor();
+
+        let s = core::str::from_utf8(&frame[..k]).unwrap();
+        framebuffer::print(s, 0xFFFFFFFF);
+
+        a += 0.07;
+        b += 0.03;
     }
 }
