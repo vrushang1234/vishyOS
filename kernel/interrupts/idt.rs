@@ -223,8 +223,8 @@ extern "C" fn interrupt_dispatch(frame: &InterruptFrame) {
         }
 
         33 => {
-            let scancode = unsafe { crate::io::inb(0x60) };
-            crate::keyboard::process_scancode(scancode);
+            let scancode = unsafe { crate::arch::io::inb(0x60) };
+            crate::drivers::keyboard::process_scancode(scancode);
             unsafe { pic::send_eoi(1) };
         }
 

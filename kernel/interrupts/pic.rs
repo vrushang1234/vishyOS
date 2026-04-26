@@ -1,4 +1,4 @@
-use crate::io::{inb, io_wait, outb};
+use crate::arch::io::{inb, io_wait, outb};
 
 ////////// PIC port addresses //////////
 // There are total of 2 PICs, one master and one slave

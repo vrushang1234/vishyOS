@@ -1,6 +1,6 @@
 use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
-use crate::cmd;
+use crate::shell::cmd;
 
 static SHIFT: AtomicBool = AtomicBool::new(false);
 static LINE_LEN: AtomicUsize = AtomicUsize::new(0);

@@ -6,17 +6,15 @@
 
 use core::panic::PanicInfo;
 
-mod cmd;
-mod colors;
+mod arch;
 mod drivers;
 mod font;
 mod gdt;
 mod interrupts;
-mod io;
-mod keyboard;
 mod memory;
+mod shell;
 
-use colors::{Color, get_color};
+use drivers::colors::{Color, get_color};
 use drivers::framebuffer;
 
 unsafe fn enable_sse() {

@@ -1,4 +1,4 @@
-use crate::framebuffer;
+use crate::drivers::framebuffer;
 use libm::{cosf, sinf};
 
 pub fn handle_command(buf: &[u8]) {
