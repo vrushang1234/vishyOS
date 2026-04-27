@@ -1,4 +1,5 @@
 use crate::drivers::framebuffer;
+use crate::memory::mmu;
 use libm::{cosf, sinf};
 
 pub fn handle_command(buf: &[u8]) {
@@ -8,6 +9,8 @@ pub fn handle_command(buf: &[u8]) {
         cmd_clear();
     } else if buf == b"donut" {
         donut_cmd();
+    } else if buf == b"meminfo" {
+        cmd_meminfo();
     } else {
         framebuffer::print("\nUnknown command\n", 0xFFFFFFFF);
     }
@@ -15,13 +18,17 @@ pub fn handle_command(buf: &[u8]) {
 
 fn cmd_help() {
     framebuffer::print(
-        "\nCommands:\n help  - show this message\n clear - clear screen\n donut - spinning donut\n",
+        "\nCommands:\n help    - show this message\n clear   - clear screen\n donut   - spinning donut\n meminfo - print usable memory map\n",
         0xFFFFFFFF,
     );
 }
 
 fn cmd_clear() {
     framebuffer::clear();
+}
+
+fn cmd_meminfo() {
+    mmu::print_memory_map();
 }
 
 fn donut_cmd() {
