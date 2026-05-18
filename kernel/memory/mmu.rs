@@ -95,6 +95,22 @@ pub fn total_usable_bytes() -> u64 {
     total_frames() * FRAME_SIZE
 }
 
+pub fn alloc_frame() -> Option<u64> {
+    unsafe {
+        while NEXT_REGION < USABLE_COUNT {
+            let r = USABLE_REGIONS[NEXT_REGION];
+            if NEXT_FRAME_IN_REGION < r.frames {
+                let addr = r.base + NEXT_FRAME_IN_REGION * FRAME_SIZE;
+                NEXT_FRAME_IN_REGION += 1;
+                return Some(addr);
+            }
+            NEXT_REGION += 1;
+            NEXT_FRAME_IN_REGION = 0;
+        }
+        None
+    }
+}
+
 pub fn print_memory_map() {
     let mut writer = FbWriter;
     let _ = write!(writer, "\n");

@@ -14,8 +14,17 @@ mod interrupts;
 mod memory;
 mod shell;
 
+use core::fmt::Write;
 use drivers::colors::{Color, get_color};
 use drivers::framebuffer;
+
+struct FbWriter;
+impl Write for FbWriter {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        framebuffer::print(s, 0xFFFFFFFF);
+        Ok(())
+    }
+}
 
 unsafe fn enable_sse() {
     let mut cr0: u64;
@@ -47,6 +56,7 @@ pub extern "C" fn rust_main() -> ! {
     interrupts::idt::init();
     framebuffer::print("Interrupts Initialized\n", white_font);
     memory::mmu::init_memory();
+
     framebuffer::print(
         "##    ## ######  ######  ##  ## ##    ##  ######  ######\n\
         ##    ##   ##   ##       ##  ##  ##  ##  ##    ## ##     \n\
@@ -55,6 +65,19 @@ pub extern "C" fn rust_main() -> ! {
         ####   ######  ######   ##  ##    ##    ######  ######\n",
         orange_font,
     );
+
+    let mut w = FbWriter;
+    for i in 0..4 {
+        match memory::mmu::alloc_frame() {
+            Some(addr) => {
+                let _ = write!(w, "frame {} = {:#x}\n", i, addr);
+            }
+            None => {
+                let _ = write!(w, "frame {} = OOM\n", i);
+                break;
+            }
+        }
+    }
 
     framebuffer::print("\n> ", white_font);
 
