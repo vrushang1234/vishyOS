@@ -25,8 +25,7 @@ static mut USABLE_REGIONS: [MemRegion; MAX_REGIONS] = [MemRegion {
 static mut USABLE_COUNT: usize = 0;
 static mut TOTAL_FRAMES: u64 = 0;
 
-static mut NEXT_REGION: usize = 0;
-static mut NEXT_FRAME_IN_REGION: u64 = 0;
+static mut FREE_LIST_HEAD: u64 = 0;
 
 struct FbWriter;
 
@@ -78,8 +77,15 @@ pub fn init_memory() {
     unsafe {
         USABLE_COUNT = count;
         TOTAL_FRAMES = total_frames;
-        NEXT_REGION = 0;
-        NEXT_FRAME_IN_REGION = 0;
+        FREE_LIST_HEAD = 0;
+    }
+
+    for ri in (0..count).rev() {
+        let r = unsafe { USABLE_REGIONS[ri] };
+        for fi in (0..r.frames).rev() {
+            let addr = r.base + fi * FRAME_SIZE;
+            free_frame(addr);
+        }
     }
 }
 
@@ -97,18 +103,37 @@ pub fn total_usable_bytes() -> u64 {
 
 pub fn alloc_frame() -> Option<u64> {
     unsafe {
-        while NEXT_REGION < USABLE_COUNT {
-            let r = USABLE_REGIONS[NEXT_REGION];
-            if NEXT_FRAME_IN_REGION < r.frames {
-                let addr = r.base + NEXT_FRAME_IN_REGION * FRAME_SIZE;
-                NEXT_FRAME_IN_REGION += 1;
-                return Some(addr);
-            }
-            NEXT_REGION += 1;
-            NEXT_FRAME_IN_REGION = 0;
+        if FREE_LIST_HEAD == 0 {
+            return None;
         }
-        None
+        let addr = FREE_LIST_HEAD;
+        let next = *(addr as *const u64);
+        FREE_LIST_HEAD = next;
+        Some(addr)
     }
+}
+
+pub fn free_frame(addr: u64) {
+    debug_assert!(addr & (FRAME_SIZE - 1) == 0);
+    unsafe {
+        *(addr as *mut u64) = FREE_LIST_HEAD;
+        FREE_LIST_HEAD = addr;
+    }
+}
+
+pub fn free_list_head() -> Option<u64> {
+    unsafe {
+        if FREE_LIST_HEAD == 0 {
+            None
+        } else {
+            Some(FREE_LIST_HEAD)
+        }
+    }
+}
+
+pub unsafe fn next_free(addr: u64) -> Option<u64> {
+    let next = unsafe { *(addr as *const u64) };
+    if next == 0 { None } else { Some(next) }
 }
 
 pub fn print_memory_map() {

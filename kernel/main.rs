@@ -67,13 +67,17 @@ pub extern "C" fn rust_main() -> ! {
     );
 
     let mut w = FbWriter;
+    let mut frames = [0u64; 4];
+
+    let _ = write!(w, "alloc:\n");
     for i in 0..4 {
         match memory::mmu::alloc_frame() {
             Some(addr) => {
-                let _ = write!(w, "frame {} = {:#x}\n", i, addr);
+                frames[i] = addr;
+                let _ = write!(w, " frame {} = {:#x}\n", i, addr);
             }
             None => {
-                let _ = write!(w, "frame {} = OOM\n", i);
+                let _ = write!(w, " frame {} = OOM\n", i);
                 break;
             }
         }
