@@ -3,25 +3,32 @@
 
 use core::ptr;
 
-/// Copy `n` bytes from `src` to `dest`
+/// Copy `n` bytes from `src` to `dest` via `rep movsb`
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn memcpy(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
-    let mut i = 0;
-    while i < n {
-        unsafe { ptr::write(dest.add(i), ptr::read(src.add(i))) };
-        i += 1;
+    unsafe {
+        core::arch::asm!(
+            "rep movsb",
+            inout("rdi") dest => _,
+            inout("rsi") src => _,
+            inout("rcx") n => _,
+            options(nostack, preserves_flags),
+        );
     }
     dest
 }
 
-/// Set `n` bytes at `dest` to `val`
+/// Set `n` bytes at `dest` to `val` via `rep stosb`
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn memset(dest: *mut u8, val: i32, n: usize) -> *mut u8 {
-    let byte = val as u8;
-    let mut i = 0;
-    while i < n {
-        unsafe { ptr::write(dest.add(i), byte) };
-        i += 1;
+    unsafe {
+        core::arch::asm!(
+            "rep stosb",
+            inout("rdi") dest => _,
+            inout("rcx") n => _,
+            in("al") val as u8,
+            options(nostack, preserves_flags),
+        );
     }
     dest
 }
@@ -29,17 +36,27 @@ pub unsafe extern "C" fn memset(dest: *mut u8, val: i32, n: usize) -> *mut u8 {
 /// Copy `n` bytes from `src` to `dest`, overlap-safe
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn memmove(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
-    if (dest as usize) < (src as usize) {
-        let mut i = 0;
-        while i < n {
-            unsafe { ptr::write(dest.add(i), ptr::read(src.add(i))) };
-            i += 1;
-        }
-    } else {
-        let mut i = n;
-        while i > 0 {
-            i -= 1;
-            unsafe { ptr::write(dest.add(i), ptr::read(src.add(i))) };
+    unsafe {
+        if (dest as usize) < (src as usize) {
+            core::arch::asm!(
+                "rep movsb",
+                inout("rdi") dest => _,
+                inout("rsi") src => _,
+                inout("rcx") n => _,
+                options(nostack, preserves_flags),
+            );
+        } else if n > 0 {
+            let d = dest.add(n - 1);
+            let s = src.add(n - 1);
+            core::arch::asm!(
+                "std",
+                "rep movsb",
+                "cld",
+                inout("rdi") d => _,
+                inout("rsi") s => _,
+                inout("rcx") n => _,
+                options(nostack),
+            );
         }
     }
     dest
