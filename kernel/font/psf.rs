@@ -11,12 +11,37 @@ const GLYPH_WIDTH: usize = 8;
 static mut CURSOR_X: usize = 0;
 static mut CURSOR_Y: usize = 0;
 static mut SCREEN_COLS: usize = 80;
+static mut SCREEN_HEIGHT_PX: usize = 600;
 const CURSOR_TOP: usize = GLYPH_HEIGHT - 2;
 
 static mut PREV_LINE_END_X: usize = 0;
 
-pub unsafe fn set_screen_width(pixel_width: usize) {
-    unsafe { SCREEN_COLS = pixel_width / GLYPH_WIDTH };
+pub unsafe fn set_screen_size(pixel_width: usize, pixel_height: usize) {
+    unsafe {
+        SCREEN_COLS = pixel_width / GLYPH_WIDTH;
+        SCREEN_HEIGHT_PX = pixel_height;
+    }
+}
+
+unsafe fn scroll(fb: *mut u32, pitch: usize) {
+    let stride = pitch / 4;
+    let height = unsafe { SCREEN_HEIGHT_PX };
+    let total = (height - GLYPH_HEIGHT) * stride;
+    unsafe {
+        core::ptr::copy(fb.add(GLYPH_HEIGHT * stride), fb, total);
+        let clear_start = (height - GLYPH_HEIGHT) * stride;
+        let clear_count = GLYPH_HEIGHT * stride;
+        core::ptr::write_bytes(fb.add(clear_start), 0, clear_count * 4);
+        CURSOR_Y -= GLYPH_HEIGHT;
+        PREV_LINE_END_X = 0;
+    }
+}
+
+unsafe fn maybe_scroll(fb: *mut u32, pitch: usize) {
+    let needs = unsafe { CURSOR_Y + GLYPH_HEIGHT > SCREEN_HEIGHT_PX };
+    if needs {
+        unsafe { scroll(fb, pitch) };
+    }
 }
 
 pub unsafe fn reset_cursor() {
@@ -60,13 +85,16 @@ pub unsafe fn draw_str(fb: *mut u32, pitch: usize, s: &str, fg: u32, bg: u32) {
                     PREV_LINE_END_X = CURSOR_X;
                     CURSOR_Y += GLYPH_HEIGHT;
                     CURSOR_X = 0;
+                    maybe_scroll(fb, pitch);
                 }
                 _ => {
+                    maybe_scroll(fb, pitch);
                     draw_char(fb, pitch, CURSOR_X, CURSOR_Y, c, fg, bg);
                     CURSOR_X += GLYPH_WIDTH;
                     if CURSOR_X >= (SCREEN_COLS) * GLYPH_WIDTH {
                         CURSOR_X = 0;
                         CURSOR_Y += GLYPH_HEIGHT;
+                        maybe_scroll(fb, pitch);
                     }
                 }
             }

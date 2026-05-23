@@ -1,11 +1,21 @@
 use crate::drivers::framebuffer;
 use core::fmt::{self, Write};
 use limine::memory_map::EntryType;
-use limine::request::MemoryMapRequest;
+use limine::request::{HhdmRequest, MemoryMapRequest};
 
 #[used]
 #[unsafe(link_section = ".requests")]
 static MEMMAP_REQUEST: MemoryMapRequest = MemoryMapRequest::new();
+
+#[used]
+#[unsafe(link_section = ".requests")]
+static HHDM_REQUEST: HhdmRequest = HhdmRequest::new();
+
+static mut HHDM_OFFSET: u64 = 0;
+
+pub fn phys_to_virt(phys: u64) -> u64 {
+    unsafe { phys + HHDM_OFFSET }
+}
 
 pub const FRAME_SIZE: u64 = 4096;
 
@@ -37,6 +47,14 @@ impl Write for FbWriter {
 }
 
 pub fn init_memory() {
+    let Some(hhdm) = HHDM_REQUEST.get_response() else {
+        framebuffer::print("No HHDM\n", 0xFFFFFFFF);
+        return;
+    };
+    unsafe {
+        HHDM_OFFSET = hhdm.offset();
+    }
+
     let Some(response) = MEMMAP_REQUEST.get_response() else {
         framebuffer::print("No memory map\n", 0xFFFFFFFF);
         return;
@@ -107,7 +125,7 @@ pub fn alloc_frame() -> Option<u64> {
             return None;
         }
         let addr = FREE_LIST_HEAD;
-        let next = *(addr as *const u64);
+        let next = *(phys_to_virt(addr) as *const u64);
         FREE_LIST_HEAD = next;
         Some(addr)
     }
@@ -116,7 +134,7 @@ pub fn alloc_frame() -> Option<u64> {
 pub fn free_frame(addr: u64) {
     debug_assert!(addr & (FRAME_SIZE - 1) == 0);
     unsafe {
-        *(addr as *mut u64) = FREE_LIST_HEAD;
+        *(phys_to_virt(addr) as *mut u64) = FREE_LIST_HEAD;
         FREE_LIST_HEAD = addr;
     }
 }
@@ -132,7 +150,7 @@ pub fn free_list_head() -> Option<u64> {
 }
 
 pub unsafe fn next_free(addr: u64) -> Option<u64> {
-    let next = unsafe { *(addr as *const u64) };
+    let next = unsafe { *(phys_to_virt(addr) as *const u64) };
     if next == 0 { None } else { Some(next) }
 }
 

@@ -18,7 +18,7 @@ pub fn init() {
             let height = framebuffer.height() as usize;
             unsafe {
                 FB = (fb_ptr, pitch, height);
-                font::psf::set_screen_width(width);
+                font::psf::set_screen_size(width, height);
             }
         }
     }

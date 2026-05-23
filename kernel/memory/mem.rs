@@ -26,6 +26,25 @@ pub unsafe extern "C" fn memset(dest: *mut u8, val: i32, n: usize) -> *mut u8 {
     dest
 }
 
+/// Copy `n` bytes from `src` to `dest`, overlap-safe
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn memmove(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
+    if (dest as usize) < (src as usize) {
+        let mut i = 0;
+        while i < n {
+            unsafe { ptr::write(dest.add(i), ptr::read(src.add(i))) };
+            i += 1;
+        }
+    } else {
+        let mut i = n;
+        while i > 0 {
+            i -= 1;
+            unsafe { ptr::write(dest.add(i), ptr::read(src.add(i))) };
+        }
+    }
+    dest
+}
+
 /// Compute length of C string (null-terminated)
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn strlen(s: *const u8) -> usize {

@@ -88,13 +88,17 @@ impl VirtAddr {
     }
 }
 
-pub fn alloc_table() -> Option<*mut PageTable> {
+pub fn alloc_table() -> Option<u64> {
     let frame = mmu::alloc_frame()?;
-    let ptr = frame as *mut PageTable;
+    let virt = mmu::phys_to_virt(frame);
     unsafe {
-        core::ptr::write_bytes(ptr as *mut u8, 0, PAGE_SIZE as usize);
+        core::ptr::write_bytes(virt as *mut u8, 0, PAGE_SIZE as usize);
     }
-    Some(ptr)
+    Some(frame)
+}
+
+fn table_ptr(phys: u64) -> *mut PageTable {
+    mmu::phys_to_virt(phys) as *mut PageTable
 }
 
 pub fn read_cr3() -> u64 {
@@ -125,17 +129,17 @@ pub enum MapError {
 
 unsafe fn next_table_create(e: &mut Entry) -> Result<*mut PageTable, MapError> {
     if e.is_present() {
-        Ok(e.addr() as *mut PageTable)
+        Ok(table_ptr(e.addr()))
     } else {
-        let table = alloc_table().ok_or(MapError::OutOfFrames)?;
-        e.set(table as u64, flags::PRESENT | flags::WRITABLE);
-        Ok(table)
+        let phys = alloc_table().ok_or(MapError::OutOfFrames)?;
+        e.set(phys, flags::PRESENT | flags::WRITABLE);
+        Ok(table_ptr(phys))
     }
 }
 
 unsafe fn next_table(e: Entry) -> Option<*mut PageTable> {
     if e.is_present() && (e.flags() & flags::HUGE) == 0 {
-        Some(e.addr() as *mut PageTable)
+        Some(table_ptr(e.addr()))
     } else {
         None
     }
