@@ -116,3 +116,97 @@ pub unsafe fn invlpg(addr: u64) {
         core::arch::asm!("invlpg [{}]", in(reg) addr, options(nostack, preserves_flags));
     }
 }
+
+#[derive(Debug, Copy, Clone)]
+pub enum MapError {
+    OutOfFrames,
+    AlreadyMapped,
+}
+
+unsafe fn next_table_create(e: &mut Entry) -> Result<*mut PageTable, MapError> {
+    if e.is_present() {
+        Ok(e.addr() as *mut PageTable)
+    } else {
+        let table = alloc_table().ok_or(MapError::OutOfFrames)?;
+        e.set(table as u64, flags::PRESENT | flags::WRITABLE);
+        Ok(table)
+    }
+}
+
+unsafe fn next_table(e: Entry) -> Option<*mut PageTable> {
+    if e.is_present() && (e.flags() & flags::HUGE) == 0 {
+        Some(e.addr() as *mut PageTable)
+    } else {
+        None
+    }
+}
+
+pub unsafe fn map_page(
+    pml4: *mut PageTable,
+    virt: VirtAddr,
+    phys: u64,
+    leaf_flags: u64,
+) -> Result<(), MapError> {
+    unsafe {
+        let pml4_e = &mut (*pml4).entries[virt.pml4_index()];
+        let pdpt = next_table_create(pml4_e)?;
+
+        let pdpt_e = &mut (*pdpt).entries[virt.pdpt_index()];
+        let pd = next_table_create(pdpt_e)?;
+
+        let pd_e = &mut (*pd).entries[virt.pd_index()];
+        let pt = next_table_create(pd_e)?;
+
+        let pt_e = &mut (*pt).entries[virt.pt_index()];
+        if pt_e.is_present() {
+            return Err(MapError::AlreadyMapped);
+        }
+        pt_e.set(phys, leaf_flags | flags::PRESENT);
+
+        invlpg(virt.0);
+        Ok(())
+    }
+}
+
+pub unsafe fn unmap_page(pml4: *mut PageTable, virt: VirtAddr) -> Option<u64> {
+    unsafe {
+        let pml4_e = (*pml4).entries[virt.pml4_index()];
+        let pdpt = next_table(pml4_e)?;
+        let pdpt_e = (*pdpt).entries[virt.pdpt_index()];
+        let pd = next_table(pdpt_e)?;
+        let pd_e = (*pd).entries[virt.pd_index()];
+        let pt = next_table(pd_e)?;
+        let pt_e = &mut (*pt).entries[virt.pt_index()];
+        if !pt_e.is_present() {
+            return None;
+        }
+        let phys = pt_e.addr();
+        pt_e.clear();
+        invlpg(virt.0);
+        Some(phys)
+    }
+}
+
+pub unsafe fn translate(pml4: *mut PageTable, virt: VirtAddr) -> Option<u64> {
+    unsafe {
+        let pml4_e = (*pml4).entries[virt.pml4_index()];
+        let pdpt = next_table(pml4_e)?;
+        let pdpt_e = (*pdpt).entries[virt.pdpt_index()];
+
+        if pdpt_e.flags() & flags::HUGE != 0 {
+            return Some(pdpt_e.addr() + (virt.0 & 0x3FFF_FFFF));
+        }
+        let pd = next_table(pdpt_e)?;
+        let pd_e = (*pd).entries[virt.pd_index()];
+
+        if pd_e.flags() & flags::HUGE != 0 {
+            return Some(pd_e.addr() + (virt.0 & 0x1F_FFFF));
+        }
+        let pt = next_table(pd_e)?;
+        let pt_e = (*pt).entries[virt.pt_index()];
+        if !pt_e.is_present() {
+            return None;
+        }
+        Some(pt_e.addr() + virt.page_offset())
+    }
+}
